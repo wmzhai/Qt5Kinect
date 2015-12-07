@@ -24,15 +24,15 @@ public:
 	// Name: invalidateDeviceObjects()
 	// Desc: If the lost device can be restored, the application prepares the 
 	//       device by destroying all video-memory resources and any 
-	//       swap chains. This is typically accomplished by using the SAFE_RELEASE 
+	//       swap chains. This is typically accomplished by using the SafeRelease 
 	//       macro.
 	//-----------------------------------------------------------------------------
 	HRESULT	invalidateDeviceObjects()
 	{
 		if (!m_pD2DFactory || !m_pDWriteFactory) return E_FAIL;
 
-		SAFE_RELEASE(m_pBrush);
-		SAFE_RELEASE(m_pTextFormat);
+		SafeRelease(m_pBrush);
+		SafeRelease(m_pTextFormat);
 
 		return S_OK;
 	}
@@ -104,10 +104,10 @@ public:
 	{
 		invalidateDeviceObjects();
 
-		SAFE_RELEASE(m_pHwndRenderTarget);
-		SAFE_RELEASE(m_pD2DFactory);
-		SAFE_RELEASE(m_pWICFactory);
-		SAFE_RELEASE(m_pDWriteFactory);
+		SafeRelease(m_pHwndRenderTarget);
+		SafeRelease(m_pD2DFactory);
+		SafeRelease(m_pWICFactory);
+		SafeRelease(m_pDWriteFactory);
 	}
 
 	//-----------------------------------------------------------------------------

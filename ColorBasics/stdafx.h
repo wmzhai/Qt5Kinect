@@ -29,10 +29,6 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"kinect20.lib")
 
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
-#endif
-
 // Safe release for interfaces
 template<class Interface>
 inline void SafeRelease(Interface *& pInterfaceToRelease)
