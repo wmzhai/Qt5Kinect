@@ -1,10 +1,11 @@
-#include "colorbasics.h"
+
 #include <QtWidgets/QApplication>
+#include "QD2DWidget.h"
 
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
-	ColorBasics w;
+	QD2DWidget w;
 	w.show();
 	return a.exec();
 }
