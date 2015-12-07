@@ -1,0 +1,10 @@
+*.sdf
+*.opendb
+*.opensdf
+*.aps
+*.suo
+*.user
+Debug
+Release
+GeneratedFiles
+.vs
