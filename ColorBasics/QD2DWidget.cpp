@@ -138,98 +138,14 @@ HRESULT QD2DWidget::Update()
 
 		if (SUCCEEDED(hr))
 		{
-			ProcessColor(nTime, pBuffer, nWidth, nHeight);
+			
+
+			// Draw the data with Direct2D
+			Draw(reinterpret_cast<BYTE*>(pBuffer), m_sourceWidth * m_sourceHeight * sizeof(RGBQUAD));
 		}
 
 		SafeRelease(pFrameDescription);
 	}
-
-
-
-
-
-
-
-
-
-	////
-	//if (!m_pRenderTarget) return E_FAIL;
-	//if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
-
-	//hr = S_OK;
-
-	//static const WCHAR sc_helloWorld[] = L"Hello, World!";
-
-	//beginDraw();
-
-	//m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-	//clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
-
-	//m_pRenderTarget->DrawText(
-	//	sc_helloWorld,
-	//	ARRAYSIZE(sc_helloWorld) - 1,
-	//	m_pTextFormat,
-	//	D2D1::RectF(0, 0, width() / 2, height() / 2),
-	//	m_pBrush
-	//	);
-
-	//endDraw();
-
-	return S_OK;
-
-
-}
-
-
-
-/// <summary>
-/// Handle new color data
-/// <param name="nTime">timestamp of frame</param>
-/// <param name="pBuffer">pointer to frame data</param>
-/// <param name="nWidth">width (in pixels) of input image data</param>
-/// <param name="nHeight">height (in pixels) of input image data</param>
-/// </summary>
-void  QD2DWidget::ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight)
-{
-
-	// Make sure we've received valid data
-	if (pBuffer && (nWidth == m_sourceWidth) && (nHeight == m_sourceHeight))
-	{
-		// Draw the data with Direct2D
-		Draw(reinterpret_cast<BYTE*>(pBuffer), m_sourceWidth * m_sourceHeight * sizeof(RGBQUAD));
-
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Name: render()
-// Desc: Draws the scene
-//-----------------------------------------------------------------------------
-HRESULT	QD2DWidget::render()
-{
-	if (!m_pRenderTarget) return E_FAIL;
-	if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
-
-	HRESULT hr = S_OK;
-
-	static const WCHAR sc_helloWorld[] = L"Hello, World!";
-
-	beginDraw();
-
-	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-	clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
-
-	m_pRenderTarget->DrawText(
-		sc_helloWorld,
-		ARRAYSIZE(sc_helloWorld) - 1,
-		m_pTextFormat,
-		D2D1::RectF(0, 0, width() / 2, height() / 2),
-		m_pBrush
-		);
-
-	endDraw();
 
 	return S_OK;
 }
@@ -248,33 +164,34 @@ HRESULT QD2DWidget::Draw(BYTE* pImage, unsigned long cbImage)
 	if (FAILED(hr))
 		return hr;
 
-	beginDraw();
+	// Begin Draw
+	m_pRenderTarget->BeginDraw();
+	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+	m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+
+
+
+
+
+	D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
+
+
+
 
 
 	m_pRenderTarget->DrawBitmap(m_pBitmap);
 
-	endDraw();
 
+	// End Draw
+	hr = m_pRenderTarget->EndDraw();
+	if (hr == D2DERR_RECREATE_TARGET)
+	{
+		uninitialize();
+		hr = initialize();
+	}
 	return hr;
 }
 
-
-//-----------------------------------------------------------------------------
-// Name: invalidateDeviceObjects()
-// Desc: If the lost device can be restored, the application prepares the 
-//       device by destroying all video-memory resources and any 
-//       swap chains. This is typically accomplished by using the SafeRelease 
-//       macro.
-//-----------------------------------------------------------------------------
-HRESULT	QD2DWidget::invalidateDeviceObjects()
-{
-	if (!m_pD2DFactory || !m_pDWriteFactory) return E_FAIL;
-
-	SafeRelease(m_pBrush);
-	SafeRelease(m_pTextFormat);
-
-	return S_OK;
-}
 
 
 
@@ -290,24 +207,13 @@ HRESULT	QD2DWidget::initialize()
 	HRESULT hr = S_OK;
 
 	m_pD2DFactory = 0;
-	m_pWICFactory = 0;
 	m_pDWriteFactory = 0;
 	m_pRenderTarget = 0;
 	m_pBitmap = 0;
 
 	// Create D2D factory
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
-	if (SUCCEEDED(hr))
-	{
-		// Create a WIC factory
-		hr = CoCreateInstance(
-			CLSID_WICImagingFactory,
-			NULL,
-			CLSCTX_INPROC_SERVER,
-			IID_IWICImagingFactory,
-			reinterpret_cast<void **>(&m_pWICFactory)
-			);
-	}
+
 	if (SUCCEEDED(hr))
 	{
 		// Create DWrite factory
@@ -318,7 +224,7 @@ HRESULT	QD2DWidget::initialize()
 			);
 	}
 
-	D2D1_SIZE_U size = D2D1::SizeU(width(), height());
+	D2D1_SIZE_U size = D2D1::SizeU(m_sourceWidth, m_sourceHeight);
 
 	if (SUCCEEDED(hr))
 	{
@@ -344,11 +250,6 @@ HRESULT	QD2DWidget::initialize()
 			);
 	}
 
-	if (SUCCEEDED(hr))
-	{
-		hr = restoreDeviceObjects();
-	}
-
 	// Get and initialize the default Kinect sensor
 	InitializeDefaultSensor();
 
@@ -362,94 +263,12 @@ HRESULT	QD2DWidget::initialize()
 //-----------------------------------------------------------------------------
 void QD2DWidget::uninitialize()
 {
-	invalidateDeviceObjects();
-
 	SafeRelease(m_pRenderTarget);
 	SafeRelease(m_pD2DFactory);
-	SafeRelease(m_pWICFactory);
 	SafeRelease(m_pDWriteFactory);
 	SafeRelease(m_pBitmap);
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: restoreDeviceObjects()
-// Desc: You are encouraged to develop applications with a single code path to 
-//       respond to device loss. This code path is likely to be similar, if not 
-//       identical, to the code path taken to initialize the device at startup.
-//-----------------------------------------------------------------------------
-HRESULT	QD2DWidget::restoreDeviceObjects()
-{
-	if (!m_pD2DFactory || !m_pDWriteFactory) return E_FAIL;
-
-	static const WCHAR msc_fontName[] = L"Verdana";
-	static const FLOAT msc_fontSize = 50;
-	HRESULT hr;
-
-	// Create a DirectWrite text format object.
-	hr = m_pDWriteFactory->CreateTextFormat(
-		msc_fontName,
-		NULL,
-		DWRITE_FONT_WEIGHT_NORMAL,
-		DWRITE_FONT_STYLE_NORMAL,
-		DWRITE_FONT_STRETCH_NORMAL,
-		msc_fontSize,
-		L"", //locale
-		&m_pTextFormat
-		);
-
-	if (SUCCEEDED(hr))
-	{
-		// Center the text horizontally and vertically.
-		m_pTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-
-		m_pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-	}
-
-	// Create a black brush.
-	hr = m_pRenderTarget->CreateSolidColorBrush(
-		D2D1::ColorF(D2D1::ColorF::White),
-		&m_pBrush
-		);
-
-	return S_OK;
-}
-
-
-
-//-----------------------------------------------------------------------------
-// Name: clearRenderTarget()
-// Desc: Clear the render target
-//-----------------------------------------------------------------------------
-void QD2DWidget::clearRenderTarget(D2D1::ColorF ClearColor)
-{
-	m_pRenderTarget->Clear(ClearColor);
-}
-
-//-----------------------------------------------------------------------------
-// Name: beginDraw()
-// Desc: Begin draw
-//-----------------------------------------------------------------------------
-void QD2DWidget::beginDraw()
-{
-	m_pRenderTarget->BeginDraw();
-}
-
-//-----------------------------------------------------------------------------
-// Name: endDraw()
-// Desc: End draw
-//-----------------------------------------------------------------------------
-HRESULT	QD2DWidget::endDraw()
-{
-	HRESULT hr = m_pRenderTarget->EndDraw();
-	if (hr == D2DERR_RECREATE_TARGET)
-	{
-		uninitialize();
-		hr = initialize();
-	}
-	return hr;
-}
 
 
 void QD2DWidget::onResize(UINT nWidth, UINT nHeight)
@@ -468,7 +287,6 @@ void QD2DWidget::onResize(UINT nWidth, UINT nHeight)
 		m_pRenderTarget->Resize(size);
 	}
 	Update();
-	//render();
 }
 
 
@@ -478,7 +296,6 @@ QPaintEngine * QD2DWidget::paintEngine() const { return 0; }
 void QD2DWidget::paintEvent(QPaintEvent *e)
 {
 	Q_UNUSED(e);
-	//render();
 	Update();
 }
 
@@ -488,7 +305,6 @@ void QD2DWidget::resizeEvent(QResizeEvent *p_event)
 	if (p_event)
 	{
 		newSize = p_event->size();
-		// if( width()==newSize.width() && height()==newSize.height() ) return;
 		QWidget::resizeEvent(p_event);
 	}
 	onResize(newSize.width(), newSize.height());
