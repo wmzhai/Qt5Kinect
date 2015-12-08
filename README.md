@@ -1,5 +1,7 @@
 # Kinect Samples Writen in Qt
 
+Still not working well
+
 ## Environment
 
 * Visual Studio 2013
