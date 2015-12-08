@@ -51,7 +51,8 @@ public:
 		m_pD2DFactory = 0;
 		m_pWICFactory = 0;
 		m_pDWriteFactory = 0;
-		m_pHwndRenderTarget = 0;
+		m_pRenderTarget = 0;
+		m_pBitmap = 0;
 
 		// Create D2D factory
 		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
@@ -76,15 +77,29 @@ public:
 				);
 		}
 
+		D2D1_SIZE_U size = D2D1::SizeU(width(), height());
+
 		if (SUCCEEDED(hr))
 		{
-			D2D1_SIZE_U size = D2D1::SizeU(width(), height());
+			D2D1_RENDER_TARGET_PROPERTIES rtProps = D2D1::RenderTargetProperties();
+			rtProps.pixelFormat = D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
+			rtProps.usage = D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE;
 
 			// Create a Direct2D render target.
 			hr = m_pD2DFactory->CreateHwndRenderTarget(
-				D2D1::RenderTargetProperties(),
+				rtProps,
 				D2D1::HwndRenderTargetProperties((HWND)this->winId(), size),
-				&m_pHwndRenderTarget
+				&m_pRenderTarget
+				);
+		}
+		
+		if (SUCCEEDED(hr))
+		{
+			// Create a bitmap that we can copy image data into and then render to the target
+			hr = m_pRenderTarget->CreateBitmap(
+				size,
+				D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),
+				&m_pBitmap
 				);
 		}
 
@@ -104,7 +119,7 @@ public:
 	{
 		invalidateDeviceObjects();
 
-		SafeRelease(m_pHwndRenderTarget);
+		SafeRelease(m_pRenderTarget);
 		SafeRelease(m_pD2DFactory);
 		SafeRelease(m_pWICFactory);
 		SafeRelease(m_pDWriteFactory);
@@ -145,7 +160,7 @@ public:
 		}
 
 		// Create a black brush.
-		hr = m_pHwndRenderTarget->CreateSolidColorBrush(
+		hr = m_pRenderTarget->CreateSolidColorBrush(
 			D2D1::ColorF(D2D1::ColorF::White),
 			&m_pBrush
 			);
@@ -160,7 +175,7 @@ public:
 	//-----------------------------------------------------------------------------
 	void	clearRenderTarget(D2D1::ColorF ClearColor)
 	{
-		m_pHwndRenderTarget->Clear(ClearColor);
+		m_pRenderTarget->Clear(ClearColor);
 	}
 
 	//-----------------------------------------------------------------------------
@@ -169,7 +184,7 @@ public:
 	//-----------------------------------------------------------------------------
 	void	beginDraw()
 	{
-		m_pHwndRenderTarget->BeginDraw();
+		m_pRenderTarget->BeginDraw();
 	}
 
 	//-----------------------------------------------------------------------------
@@ -178,7 +193,7 @@ public:
 	//-----------------------------------------------------------------------------
 	HRESULT	endDraw()
 	{
-		HRESULT hr = m_pHwndRenderTarget->EndDraw();
+		HRESULT hr = m_pRenderTarget->EndDraw();
 		if (hr == D2DERR_RECREATE_TARGET)
 		{
 			uninitialize();
@@ -193,8 +208,8 @@ public:
 	//-----------------------------------------------------------------------------
 	virtual HRESULT	render()
 	{
-		if (!m_pHwndRenderTarget) return E_FAIL;
-		if ((m_pHwndRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
+		if (!m_pRenderTarget) return E_FAIL;
+		if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
 
 		HRESULT hr = S_OK;
 
@@ -202,11 +217,11 @@ public:
 
 		beginDraw();
 
-		m_pHwndRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
 		clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
 
-		m_pHwndRenderTarget->DrawText(
+		m_pRenderTarget->DrawText(
 			sc_helloWorld,
 			ARRAYSIZE(sc_helloWorld) - 1,
 			m_pTextFormat,
@@ -223,7 +238,7 @@ public:
 	{
 		HRESULT hr = S_OK;
 
-		if (m_pHwndRenderTarget)
+		if (m_pRenderTarget)
 		{
 			// Note: This method can fail, but it's okay to ignore the
 			// error here -- it will be repeated on the next call to
@@ -232,7 +247,7 @@ public:
 			size.width = nWidth;
 			size.height = nHeight;
 
-			m_pHwndRenderTarget->Resize(size);
+			m_pRenderTarget->Resize(size);
 		}
 		render();
 	}
@@ -259,22 +274,22 @@ protected:
 		onResize(newSize.width(), newSize.height());
 	}
 
-	void keyPressEvent(QKeyEvent *e)
-	{
-		switch (e->key()) {
-			//case Qt::Key_Escape:
-			break;
-		default:
-			QWidget::keyPressEvent(e);
-		}
-	}
-
 
 private:
 	ID2D1Factory*			m_pD2DFactory;
 	IWICImagingFactory*		m_pWICFactory;
 	IDWriteFactory*			m_pDWriteFactory;
-	ID2D1HwndRenderTarget*	m_pHwndRenderTarget;
+	ID2D1HwndRenderTarget*	m_pRenderTarget;
 	ID2D1SolidColorBrush*	m_pBrush;
 	IDWriteTextFormat*		m_pTextFormat;
+	ID2D1Bitmap*             m_pBitmap;
+
+
+
+	// Format information
+	UINT                     m_sourceHeight;
+	UINT                     m_sourceWidth;
+	LONG                     m_sourceStride;
+
+
 };
