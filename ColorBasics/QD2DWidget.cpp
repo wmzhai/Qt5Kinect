@@ -19,6 +19,85 @@ QD2DWidget::~QD2DWidget()
 }
 
 
+/// <summary>
+/// Initializes the default Kinect sensor
+/// </summary>
+/// <returns>S_OK on success, otherwise failure code</returns>
+HRESULT QD2DWidget::InitializeDefaultSensor()
+{
+	HRESULT hr;
+
+	hr = GetDefaultKinectSensor(&m_pKinectSensor);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+
+	if (m_pKinectSensor)
+	{
+		// Initialize the Kinect and get the color reader
+		IColorFrameSource* pColorFrameSource = NULL;
+
+		hr = m_pKinectSensor->Open();
+
+		if (SUCCEEDED(hr))
+		{
+			hr = m_pKinectSensor->get_ColorFrameSource(&pColorFrameSource);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pColorFrameSource->OpenReader(&m_pColorFrameReader);
+		}
+
+		SafeRelease(pColorFrameSource);
+	}
+
+	if (!m_pKinectSensor || FAILED(hr))
+	{
+		return E_FAIL;
+	}
+
+	return hr;
+}
+
+
+HRESULT QD2DWidget::Update()
+{
+	if (!m_pColorFrameReader)
+	{
+		return E_FAIL;
+	}
+
+
+	if (!m_pRenderTarget) return E_FAIL;
+	if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
+
+	HRESULT hr = S_OK;
+
+	static const WCHAR sc_helloWorld[] = L"Hello, World!";
+
+	beginDraw();
+
+	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+	clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
+
+	m_pRenderTarget->DrawText(
+		sc_helloWorld,
+		ARRAYSIZE(sc_helloWorld) - 1,
+		m_pTextFormat,
+		D2D1::RectF(0, 0, width() / 2, height() / 2),
+		m_pBrush
+		);
+
+	endDraw();
+
+	return S_OK;
+
+
+}
 
 //-----------------------------------------------------------------------------
 // Name: render()
@@ -167,6 +246,9 @@ HRESULT	QD2DWidget::initialize()
 		hr = restoreDeviceObjects();
 	}
 
+	// Get and initialize the default Kinect sensor
+	InitializeDefaultSensor();
+
 	return hr;
 }
 
@@ -282,7 +364,8 @@ void QD2DWidget::onResize(UINT nWidth, UINT nHeight)
 
 		m_pRenderTarget->Resize(size);
 	}
-	render();
+	Update();
+	//render();
 }
 
 
@@ -292,7 +375,8 @@ QPaintEngine * QD2DWidget::paintEngine() const { return 0; }
 void QD2DWidget::paintEvent(QPaintEvent *e)
 {
 	Q_UNUSED(e);
-	render();
+	//render();
+	Update();
 }
 
 void QD2DWidget::resizeEvent(QResizeEvent *p_event)

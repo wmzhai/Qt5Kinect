@@ -23,12 +23,13 @@ public:
 	HRESULT	endDraw();
 	void onResize(UINT nWidth, UINT nHeight);
 
+	HRESULT Update();
+
 protected:
 	QPaintEngine *paintEngine() const;
 	virtual void paintEvent(QPaintEvent *e);
-
 	virtual void resizeEvent(QResizeEvent *p_event);
-
+	HRESULT                 InitializeDefaultSensor();
 
 	ID2D1Factory*			m_pD2DFactory;
 	IWICImagingFactory*		m_pWICFactory;
