@@ -30,6 +30,7 @@ protected:
 	virtual void paintEvent(QPaintEvent *e);
 	virtual void resizeEvent(QResizeEvent *p_event);
 	HRESULT                 InitializeDefaultSensor();
+	void  ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight);
 
 	ID2D1Factory*			m_pD2DFactory;
 	IWICImagingFactory*		m_pWICFactory;

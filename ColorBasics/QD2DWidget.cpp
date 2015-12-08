@@ -9,6 +9,9 @@ QD2DWidget::QD2DWidget(QWidget *parent, Qt::WindowFlags flags ) : QWidget(parent
 
 	m_sourceStride = m_sourceWidth * sizeof(RGBQUAD);
 
+	// create heap storage for color pixel data in RGBX format
+	m_pColorRGBX = new RGBQUAD[m_sourceWidth * m_sourceHeight];
+
 	initialize();
 }
 
@@ -16,6 +19,12 @@ QD2DWidget::QD2DWidget(QWidget *parent, Qt::WindowFlags flags ) : QWidget(parent
 QD2DWidget::~QD2DWidget()
 {
 	uninitialize();
+
+	if (m_pColorRGBX)
+	{
+		delete[] m_pColorRGBX;
+		m_pColorRGBX = NULL;
+	}
 }
 
 
@@ -32,7 +41,6 @@ HRESULT QD2DWidget::InitializeDefaultSensor()
 	{
 		return hr;
 	}
-
 
 	if (m_pKinectSensor)
 	{
@@ -62,41 +70,136 @@ HRESULT QD2DWidget::InitializeDefaultSensor()
 	return hr;
 }
 
-
+/// <summary>
+/// Main processing function
+/// </summary>
 HRESULT QD2DWidget::Update()
 {
+	HRESULT hr;
+
 	if (!m_pColorFrameReader)
 	{
 		return E_FAIL;
 	}
 
+	IColorFrame* pColorFrame = NULL;
+	hr = m_pColorFrameReader->AcquireLatestFrame(&pColorFrame);
 
-	if (!m_pRenderTarget) return E_FAIL;
-	if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
+	if (SUCCEEDED(hr))
+	{
+		INT64 nTime = 0;
+		IFrameDescription* pFrameDescription = NULL;
+		int nWidth = 0;
+		int nHeight = 0;
+		ColorImageFormat imageFormat = ColorImageFormat_None;
+		UINT nBufferSize = 0;
+		RGBQUAD *pBuffer = NULL;
 
-	HRESULT hr = S_OK;
+		hr = pColorFrame->get_RelativeTime(&nTime);
 
-	static const WCHAR sc_helloWorld[] = L"Hello, World!";
 
-	beginDraw();
+		if (SUCCEEDED(hr))
+		{
+			hr = pColorFrame->get_FrameDescription(&pFrameDescription);
+		}
 
-	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Width(&nWidth);
+		}
 
-	clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Height(&nHeight);
+		}
 
-	m_pRenderTarget->DrawText(
-		sc_helloWorld,
-		ARRAYSIZE(sc_helloWorld) - 1,
-		m_pTextFormat,
-		D2D1::RectF(0, 0, width() / 2, height() / 2),
-		m_pBrush
-		);
+		if (SUCCEEDED(hr))
+		{
+			hr = pColorFrame->get_RawColorImageFormat(&imageFormat);
+		}
 
-	endDraw();
+		if (SUCCEEDED(hr))
+		{
+			if (imageFormat == ColorImageFormat_Bgra)
+			{
+				hr = pColorFrame->AccessRawUnderlyingBuffer(&nBufferSize, reinterpret_cast<BYTE**>(&pBuffer));
+			}
+			else if (m_pColorRGBX)
+			{
+				pBuffer = m_pColorRGBX;
+				nBufferSize = m_sourceWidth * m_sourceHeight * sizeof(RGBQUAD);
+				hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(pBuffer), ColorImageFormat_Bgra);
+			}
+			else
+			{
+				hr = E_FAIL;
+			}
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			ProcessColor(nTime, pBuffer, nWidth, nHeight);
+		}
+
+		SafeRelease(pFrameDescription);
+	}
+
+
+
+
+
+
+
+
+
+	////
+	//if (!m_pRenderTarget) return E_FAIL;
+	//if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
+
+	//hr = S_OK;
+
+	//static const WCHAR sc_helloWorld[] = L"Hello, World!";
+
+	//beginDraw();
+
+	//m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+	//clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
+
+	//m_pRenderTarget->DrawText(
+	//	sc_helloWorld,
+	//	ARRAYSIZE(sc_helloWorld) - 1,
+	//	m_pTextFormat,
+	//	D2D1::RectF(0, 0, width() / 2, height() / 2),
+	//	m_pBrush
+	//	);
+
+	//endDraw();
 
 	return S_OK;
 
 
+}
+
+
+
+/// <summary>
+/// Handle new color data
+/// <param name="nTime">timestamp of frame</param>
+/// <param name="pBuffer">pointer to frame data</param>
+/// <param name="nWidth">width (in pixels) of input image data</param>
+/// <param name="nHeight">height (in pixels) of input image data</param>
+/// </summary>
+void  QD2DWidget::ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight)
+{
+
+	// Make sure we've received valid data
+	if (pBuffer && (nWidth == m_sourceWidth) && (nHeight == m_sourceHeight))
+	{
+		// Draw the data with Direct2D
+		Draw(reinterpret_cast<BYTE*>(pBuffer), m_sourceWidth * m_sourceHeight * sizeof(RGBQUAD));
+
+	}
 }
 
 //-----------------------------------------------------------------------------
