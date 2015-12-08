@@ -6,10 +6,12 @@ class QD2DWidget : public QWidget
 
 public:
 
-	QD2DWidget(QWidget *parent = 0, Qt::WindowFlags flags = 0) : QWidget(parent, flags), m_pD2DFactory(0)
+	QD2DWidget(QWidget *parent = 0, Qt::WindowFlags flags = 0) : QWidget(parent, flags), m_pD2DFactory(0), m_sourceWidth(1920), m_sourceHeight(1080) 
 	{
 		setAttribute(Qt::WA_PaintOnScreen);
 		setAttribute(Qt::WA_NoSystemBackground);
+
+		m_sourceStride = m_sourceWidth * sizeof(RGBQUAD);
 
 		initialize();
 	}
@@ -19,6 +21,66 @@ public:
 		uninitialize();
 	}
 
+
+
+	//-----------------------------------------------------------------------------
+	// Name: render()
+	// Desc: Draws the scene
+	//-----------------------------------------------------------------------------
+	virtual HRESULT	render()
+	{
+		if (!m_pRenderTarget) return E_FAIL;
+		if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
+
+		HRESULT hr = S_OK;
+
+		static const WCHAR sc_helloWorld[] = L"Hello, World!";
+
+		beginDraw();
+
+		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+		clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
+
+		m_pRenderTarget->DrawText(
+			sc_helloWorld,
+			ARRAYSIZE(sc_helloWorld) - 1,
+			m_pTextFormat,
+			D2D1::RectF(0, 0, width() / 2, height() / 2),
+			m_pBrush
+			);
+
+		endDraw();
+
+		return S_OK;
+	}
+
+
+
+	HRESULT Draw(BYTE* pImage, unsigned long cbImage)
+	{
+		// incorrectly sized image data passed in
+		if (cbImage < ((m_sourceHeight - 1) * m_sourceStride) + (m_sourceWidth * 4))
+		{
+			return E_INVALIDARG;
+		}
+
+		HRESULT hr = m_pBitmap->CopyFromMemory(NULL, pImage, m_sourceStride);
+
+		if (FAILED(hr))
+			return hr;
+
+		beginDraw();
+
+
+		m_pRenderTarget->DrawBitmap(m_pBitmap);
+
+
+
+		endDraw();
+
+		return hr;
+	}
 
 	//-----------------------------------------------------------------------------
 	// Name: invalidateDeviceObjects()
@@ -123,6 +185,7 @@ public:
 		SafeRelease(m_pD2DFactory);
 		SafeRelease(m_pWICFactory);
 		SafeRelease(m_pDWriteFactory);
+		SafeRelease(m_pBitmap);
 	}
 
 	//-----------------------------------------------------------------------------
@@ -202,37 +265,6 @@ public:
 		return hr;
 	}
 
-	//-----------------------------------------------------------------------------
-	// Name: render()
-	// Desc: Draws the scene
-	//-----------------------------------------------------------------------------
-	virtual HRESULT	render()
-	{
-		if (!m_pRenderTarget) return E_FAIL;
-		if ((m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED)) return E_FAIL;
-
-		HRESULT hr = S_OK;
-
-		static const WCHAR sc_helloWorld[] = L"Hello, World!";
-
-		beginDraw();
-
-		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-		clearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
-
-		m_pRenderTarget->DrawText(
-			sc_helloWorld,
-			ARRAYSIZE(sc_helloWorld) - 1,
-			m_pTextFormat,
-			D2D1::RectF(0, 0, width() / 2, height() / 2),
-			m_pBrush
-			);
-
-		endDraw();
-
-		return S_OK;
-	}
 
 	void onResize(UINT nWidth, UINT nHeight)
 	{
