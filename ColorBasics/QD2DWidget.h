@@ -6,20 +6,9 @@ class QD2DWidget : public QWidget
 
 public:
 
-	QD2DWidget(QWidget *parent = 0, Qt::WindowFlags flags = 0) : QWidget(parent, flags), m_pD2DFactory(0), m_sourceWidth(1920), m_sourceHeight(1080) 
-	{
-		setAttribute(Qt::WA_PaintOnScreen);
-		setAttribute(Qt::WA_NoSystemBackground);
+	QD2DWidget(QWidget *parent = 0, Qt::WindowFlags flags = 0);
 
-		m_sourceStride = m_sourceWidth * sizeof(RGBQUAD);
-
-		initialize();
-	}
-
-	virtual ~QD2DWidget()
-	{
-		uninitialize();
-	}
+	virtual ~QD2DWidget();
 
 
 
@@ -308,6 +297,8 @@ protected:
 
 
 private:
+
+
 	ID2D1Factory*			m_pD2DFactory;
 	IWICImagingFactory*		m_pWICFactory;
 	IDWriteFactory*			m_pDWriteFactory;
@@ -324,4 +315,11 @@ private:
 	LONG                     m_sourceStride;
 
 
+	// Current Kinect
+	IKinectSensor*          m_pKinectSensor;
+
+	// Color reader
+	IColorFrameReader*      m_pColorFrameReader;
+
+	RGBQUAD*                m_pColorRGBX;
 };
