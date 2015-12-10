@@ -19,6 +19,7 @@
 #include <QWaitCondition>
 #include <QImage>
 #include <QtWidgets>
+#include <QThread>
 
 #ifdef _UNICODE
 #if defined _M_IX86
