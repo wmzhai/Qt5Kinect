@@ -10,6 +10,15 @@ public:
 	QKinectGrabber(QObject *parent = 0);
 	~QKinectGrabber();
 
+public slots:
+	void stop();
+
+signals:
+	void colorImage(const QImage &image);
+	void frameUpdated();
+
+protected:
+	void run() Q_DECL_OVERRIDE;
 
 protected:
 	QScopedPointer<QKinectGrabberPrivate> d_ptr;
