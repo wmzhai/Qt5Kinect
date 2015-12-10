@@ -60,19 +60,23 @@ QKinectGrabberPrivate::QKinectGrabberPrivate():
 	ColorFrameWidth(1920),
 	ColorFrameHeight(1080),
 	ColorFrameChannels(4),
-	ColorBuffer(ColorFrameWidth * ColorFrameHeight *ColorFrameChannels),
+//	ColorBuffer(ColorFrameWidth * ColorFrameHeight * ColorFrameChannels),
 	EmitImageEnabled(true),
 	Running(false)
 {
+	ColorBuffer.resize(ColorFrameWidth * ColorFrameHeight * ColorFrameChannels, 0);
+
 	for (int i = 0; i < 256; ++i)
 		ColorTable.push_back(qRgb(i, i, i));
+
+	
 }
 
 
 
 
 QKinectGrabber::QKinectGrabber(QObject *parent)
-	: QThread(parent)
+	: QThread(parent), d_ptr(new QKinectGrabberPrivate)
 {
 
 }
