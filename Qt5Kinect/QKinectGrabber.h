@@ -2,6 +2,10 @@
 
 #include <QThread>
 
+
+
+
+
 class QKinectGrabber : public QThread
 {
 	Q_OBJECT
