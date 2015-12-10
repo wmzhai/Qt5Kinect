@@ -22,6 +22,9 @@
 #include <QThread>
 #include <QObject>
 
+//std lib
+#include <strsafe.h>
+#include <iostream>
 
 #ifdef _UNICODE
 #if defined _M_IX86
