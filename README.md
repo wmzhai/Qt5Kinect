@@ -1,6 +1,5 @@
 # Kinect Samples Writen in Qt
 
-Still not working well
 
 ## Environment
 
@@ -8,3 +7,5 @@ Still not working well
 * Qt 5.5.1
 * qt-vs-addin 1.2.4
 
+## Reference
+[QtKinect](https://github.com/diegomazala/QtKinect)
