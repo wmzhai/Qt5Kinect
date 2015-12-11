@@ -1,4 +1,4 @@
-# Kinect Samples Writen in Qt
+# Kinect Samples Written in Qt
 
 ## Project List
 * Qt5Kinect - Kinect Sensor API Wrap Lib for Qt5
