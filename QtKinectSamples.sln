@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ColorBasics-Qt5", "ColorBas
 		{39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2} = {39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DepthBasics-Qt5", "DepthBasics-Qt5\DepthBasics-Qt5.vcxproj", "{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -34,6 +36,14 @@ Global
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Build.0 = Release|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.Build.0 = Release|x64
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Debug|Win32.Build.0 = Debug|Win32
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Debug|x64.ActiveCfg = Debug|x64
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Debug|x64.Build.0 = Debug|x64
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Release|Win32.ActiveCfg = Release|Win32
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Release|Win32.Build.0 = Release|Win32
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Release|x64.ActiveCfg = Release|x64
+		{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
