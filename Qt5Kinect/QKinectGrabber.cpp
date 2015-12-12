@@ -2,6 +2,34 @@
 #include "QKinectGrabber.h"
 
 
+// InfraredSourceValueMaximum is the highest value that can be returned in the InfraredFrame.
+// It is cast to a float for readability in the visualization code.
+#define InfraredSourceValueMaximum static_cast<float>(USHRT_MAX)
+
+// The InfraredOutputValueMinimum value is used to set the lower limit, post processing, of the
+// infrared data that we will render.
+// Increasing or decreasing this value sets a brightness "wall" either closer or further away.
+#define InfraredOutputValueMinimum 0.01f 
+
+// The InfraredOutputValueMaximum value is the upper limit, post processing, of the
+// infrared data that we will render.
+#define InfraredOutputValueMaximum 1.0f
+
+// The InfraredSceneValueAverage value specifies the average infrared value of the scene.
+// This value was selected by analyzing the average pixel intensity for a given scene.
+// Depending on the visualization requirements for a given application, this value can be
+// hard coded, as was done here, or calculated by averaging the intensity for each pixel prior
+// to rendering.
+#define InfraredSceneValueAverage 0.08f
+
+/// The InfraredSceneStandardDeviations value specifies the number of standard deviations
+/// to apply to InfraredSceneValueAverage. This value was selected by analyzing data
+/// from a given scene.
+/// Depending on the visualization requirements for a given application, this value can be
+/// hard coded, as was done here, or calculated at runtime.
+#define InfraredSceneStandardDeviations 3.0f
+
+
 
 class QKinectGrabberPrivate
 {
@@ -11,6 +39,7 @@ public:
 	void UninitializeSensor();
 	bool UpdateColor();
 	bool UpdateDepth();
+	bool UpdateInfrared();
 
 
 	IKinectSensor*				KinectSensor;		// Current Kinect	
@@ -38,6 +67,15 @@ public:
 	unsigned short				DepthMinReliableDistance;
 	unsigned short				DepthMaxDistance;
 
+
+	//Infrared Frame
+	IInfraredFrameReader*		InfraredFrameReader;	// Infrared reader
+	unsigned short				InfraredFrameWidth;		// = 512;
+	unsigned short				InfraredFrameHeight;	// = 424;
+	signed __int64				InfraredFrameTime;		// timestamp
+	std::vector<unsigned short> InfraredBuffer;
+
+
 };
 
 QKinectGrabberPrivate::QKinectGrabberPrivate():
@@ -49,14 +87,20 @@ QKinectGrabberPrivate::QKinectGrabberPrivate():
 	DepthFrameReader(NULL),
 	DepthFrameWidth(512),
 	DepthFrameHeight(424),
+	InfraredFrameReader(NULL),
+	InfraredFrameWidth(512),
+	InfraredFrameHeight(424),
 	EmitImageEnabled(true),
 	Running(false)
 {
 	ColorBuffer.resize(ColorFrameWidth * ColorFrameHeight * ColorFrameChannels, 0);
 	DepthBuffer.resize(DepthFrameWidth * DepthFrameHeight, 0);
+	InfraredBuffer.resize(DepthFrameWidth * DepthFrameHeight, 0);
 
 	for (int i = 0; i < 256; ++i)
 		ColorTable.push_back(qRgb(i, i, i));
+
+
 }
 
 
@@ -115,8 +159,20 @@ bool QKinectGrabberPrivate::InitializeSensor()
 			hr = pDepthFrameSource->OpenReader(&DepthFrameReader);
 		}
 
+		// InfraredFrame
+		if (SUCCEEDED(hr))
+		{
+			hr = KinectSensor->get_InfraredFrameSource(&pInfraredFrameSource);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pInfraredFrameSource->OpenReader(&InfraredFrameReader);
+		}
+
 		SafeRelease(pColorFrameSource);
 		SafeRelease(pDepthFrameSource);
+		SafeRelease(pInfraredFrameSource);
 	}
 
 	if (!KinectSensor || FAILED(hr))
@@ -344,6 +400,75 @@ bool QKinectGrabberPrivate::UpdateDepth()
 	return true;
 }
 
+
+
+bool QKinectGrabberPrivate::UpdateInfrared()
+{
+	if (!InfraredFrameReader)
+	{
+		return false;
+	}
+
+	IInfraredFrame* pInfraredFrame = NULL;
+
+	HRESULT hr = InfraredFrameReader->AcquireLatestFrame(&pInfraredFrame);
+
+	if (SUCCEEDED(hr))
+	{
+		INT64 nTime = 0;
+		IFrameDescription* pFrameDescription = NULL;
+		int frameWidth = 0;
+		int frameHeight = 0;
+		UINT nBufferSize = 0;
+		UINT16 *pBuffer = NULL;
+
+		hr = pInfraredFrame->get_RelativeTime(&nTime);
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pInfraredFrame->get_FrameDescription(&pFrameDescription);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Width(&frameWidth);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Height(&frameHeight);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pInfraredFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			std::copy(reinterpret_cast<unsigned short*>(pBuffer), pBuffer + nBufferSize, InfraredBuffer.begin());
+			InfraredFrameTime = nTime;
+
+			if (InfraredFrameWidth != frameWidth || InfraredFrameHeight != frameHeight)
+			{
+				std::cerr << "<Warning>	Unexpected size for depth buffer" << std::endl;
+				InfraredFrameWidth = frameWidth;
+				InfraredFrameHeight = frameHeight;
+			}
+		}
+
+		SafeRelease(pFrameDescription);
+	}
+
+	SafeRelease(pInfraredFrame);
+
+	if (!SUCCEEDED(hr))
+		return false;
+
+	return true;
+}
+
+
 void QKinectGrabber::stop()
 {
 	Q_D(QKinectGrabber);
@@ -376,9 +501,10 @@ void QKinectGrabber::run()
 	{
 		bool colorUpdated = d->UpdateColor();
 		bool depthUpdated = d->UpdateDepth();
+		bool infraredUpdated = d->UpdateInfrared();
 		
 
-		if (colorUpdated || depthUpdated)
+		if (colorUpdated || depthUpdated || infraredUpdated)
 			emit frameUpdated();
 
 		// If send image is enabled, emit signal with the color image
@@ -390,8 +516,6 @@ void QKinectGrabber::run()
 			}
 			d->Mutex.unlock();
 		}
-
-
 
 		// If send image is enabled, emit signal with the depth image
 		if (depthUpdated && d->EmitImageEnabled)
@@ -420,6 +544,55 @@ void QKinectGrabber::run()
 			d->Mutex.unlock();
 		}
 
+		// If send image is enabled, emit signal with the depth image
+		if (infraredUpdated && d->EmitImageEnabled)
+		{
+			d->Mutex.lock();
+			{
+				// create depth image
+				QImage infraredImg = QImage(d->InfraredFrameWidth, d->InfraredFrameHeight, QImage::Format::Format_Indexed8);
+				infraredImg.setColorTable(d->ColorTable);
+
+				std::vector<unsigned char> infraredImgBuffer(d->InfraredBuffer.size());
+
+				// casting from unsigned short (2 bytes precision) to unsigned char (1 byte precision)
+				std::transform(
+					d->InfraredBuffer.begin(),
+					d->InfraredBuffer.end(),
+					infraredImgBuffer.begin(),
+					[=](const unsigned short infra) 
+					{ 
+						// normalize the incoming infrared data (ushort) to a float ranging from 
+						// [InfraredOutputValueMinimum, InfraredOutputValueMaximum] by
+						// 1. dividing the incoming value by the source maximum value
+						float intensityRatio = static_cast<float>(infra) / InfraredSourceValueMaximum;
+
+						// 2. dividing by the (average scene value * standard deviations)
+						intensityRatio /= InfraredSceneValueAverage * InfraredSceneStandardDeviations;
+
+						// 3. limiting the value to InfraredOutputValueMaximum
+						intensityRatio = min(InfraredOutputValueMaximum, intensityRatio);
+
+						// 4. limiting the lower value InfraredOutputValueMinimym
+						intensityRatio = max(InfraredOutputValueMinimum, intensityRatio);
+
+						// 5. converting the normalized value to a byte and using the result
+						// as the RGB components required by the image
+						byte intensity = static_cast<byte>(intensityRatio * 255.0f);
+
+						return static_cast<unsigned char>(intensity); 
+				
+					}
+				);
+
+				// set pixels to depth image
+				for (int y = 0; y < infraredImg.height(); y++)
+					memcpy(infraredImg.scanLine(y), infraredImgBuffer.data() + y * infraredImg.width(), infraredImg.width());
+
+				emit infraredImage(infraredImg);
+			}
+			d->Mutex.unlock();
+		}
 		msleep(3);
 	}
 

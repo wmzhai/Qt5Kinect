@@ -16,6 +16,7 @@ public slots:
 signals:
 	void colorImage(const QImage &image);
 	void depthImage(const QImage &image);
+	void infraredImage(const QImage &image);
 	void frameUpdated();
 
 protected:

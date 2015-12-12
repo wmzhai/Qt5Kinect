@@ -14,10 +14,10 @@ int main(int argc, char *argv[])
 	QKinectGrabber k;
 	k.start();
 
-	QImageWidget depthWidget;
-	depthWidget.setMinimumSize(512, 424);
-	depthWidget.show();
-	QApplication::connect(&k, SIGNAL(depthImage(QImage)), &depthWidget, SLOT(setImage(QImage)));
+	QImageWidget infraredWidget;
+	infraredWidget.setMinimumSize(512, 424);
+	infraredWidget.show();
+	QApplication::connect(&k, SIGNAL(infraredImage(QImage)), &infraredWidget, SLOT(setImage(QImage)));
 
 
 	return a.exec();
