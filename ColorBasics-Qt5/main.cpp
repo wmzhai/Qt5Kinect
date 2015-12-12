@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
 	QApplication a(argc, argv);
 	
 	QKinectGrabber k;
+	k.setUseColorFrame(true);
 	k.start();
 
 	QImageWidget colorWidget;

@@ -50,6 +50,7 @@ public:
 	bool						Running;
 
 	//Color Frame
+	bool						UseColorFrame;
 	IColorFrameReader*			ColorFrameReader;	// Color reader	
 	std::vector<unsigned char>	ColorBuffer;
 	unsigned short				ColorFrameWidth;		// = 1920;
@@ -80,6 +81,7 @@ public:
 
 QKinectGrabberPrivate::QKinectGrabberPrivate():
 	KinectSensor(NULL),
+	UseColorFrame(false),
 	ColorFrameReader(NULL),
 	ColorFrameWidth(1920),
 	ColorFrameHeight(1080),
@@ -99,8 +101,6 @@ QKinectGrabberPrivate::QKinectGrabberPrivate():
 
 	for (int i = 0; i < 256; ++i)
 		ColorTable.push_back(qRgb(i, i, i));
-
-
 }
 
 
@@ -117,6 +117,16 @@ QKinectGrabber::~QKinectGrabber()
 	stop();
 }
 
+bool QKinectGrabber::useColorFrame() const
+{
+	return d_ptr->UseColorFrame;
+}
+
+void QKinectGrabber::setUseColorFrame(bool use)
+{
+	d_ptr->UseColorFrame = use;
+}
+
 
 
 bool QKinectGrabberPrivate::InitializeSensor()
@@ -131,24 +141,25 @@ bool QKinectGrabberPrivate::InitializeSensor()
 
 	if (KinectSensor)
 	{
-		// Initialize the Kinect and get the color reader
-		IColorFrameSource* pColorFrameSource = NULL;
-		IDepthFrameSource* pDepthFrameSource = NULL;
-		IInfraredFrameSource* pInfraredFrameSource = NULL;
-
 		hr = KinectSensor->Open();
 
-		if (SUCCEEDED(hr))
-		{
-			hr = KinectSensor->get_ColorFrameSource(&pColorFrameSource);
-		}
+		if (UseColorFrame){
+			IColorFrameSource* pColorFrameSource = NULL;
+			if (SUCCEEDED(hr))
+			{
+				hr = KinectSensor->get_ColorFrameSource(&pColorFrameSource);
+			}
 
-		if (SUCCEEDED(hr))
-		{
-			hr = pColorFrameSource->OpenReader(&ColorFrameReader);
+			if (SUCCEEDED(hr))
+			{
+				hr = pColorFrameSource->OpenReader(&ColorFrameReader);
+			}
+
+			SafeRelease(pColorFrameSource);
 		}
 		
 		// DepthFrame
+		IDepthFrameSource* pDepthFrameSource = NULL;
 		if (SUCCEEDED(hr))
 		{
 			hr = KinectSensor->get_DepthFrameSource(&pDepthFrameSource);
@@ -159,7 +170,10 @@ bool QKinectGrabberPrivate::InitializeSensor()
 			hr = pDepthFrameSource->OpenReader(&DepthFrameReader);
 		}
 
+		SafeRelease(pDepthFrameSource);
+
 		// InfraredFrame
+		IInfraredFrameSource* pInfraredFrameSource = NULL;
 		if (SUCCEEDED(hr))
 		{
 			hr = KinectSensor->get_InfraredFrameSource(&pInfraredFrameSource);
@@ -169,9 +183,7 @@ bool QKinectGrabberPrivate::InitializeSensor()
 		{
 			hr = pInfraredFrameSource->OpenReader(&InfraredFrameReader);
 		}
-
-		SafeRelease(pColorFrameSource);
-		SafeRelease(pDepthFrameSource);
+		
 		SafeRelease(pInfraredFrameSource);
 	}
 
@@ -208,7 +220,7 @@ void QKinectGrabberPrivate::UninitializeSensor()
 /// </summary>
 bool QKinectGrabberPrivate::UpdateColor()
 {
-	if (!ColorFrameReader)
+	if (!ColorFrameReader || !UseColorFrame)
 	{
 		return false;
 	}

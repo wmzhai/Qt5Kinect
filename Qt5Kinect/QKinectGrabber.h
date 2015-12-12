@@ -10,6 +10,16 @@ public:
 	QKinectGrabber(QObject *parent = 0);
 	~QKinectGrabber();
 
+private:
+	Q_PROPERTY(bool useColorFrame READ useColorFrame WRITE setUseColorFrame)
+
+
+public:
+	bool useColorFrame() const;
+	void setUseColorFrame(bool);
+
+
+
 public slots:
 	void stop();
 
