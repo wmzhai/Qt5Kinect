@@ -11,8 +11,19 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ColorBasics-Qt5", "ColorBas
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DepthBasics-Qt5", "DepthBasics-Qt5\DepthBasics-Qt5.vcxproj", "{8AEECD5E-1F07-49F2-9F1C-7CD091D362CC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2} = {39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InfraredBasics-Qt5", "InfraredBasics-Qt5\InfraredBasics-Qt5.vcxproj", "{0B871A42-8393-40FA-9FA9-23E5EF420D0C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2} = {39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BodyBasics-Qt5", "BodyBasics-Qt5\BodyBasics-Qt5.vcxproj", "{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2} = {39EB7C6C-3523-4A1D-B25E-01FBC5BAC7E2}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,6 +65,14 @@ Global
 		{0B871A42-8393-40FA-9FA9-23E5EF420D0C}.Release|Win32.Build.0 = Release|Win32
 		{0B871A42-8393-40FA-9FA9-23E5EF420D0C}.Release|x64.ActiveCfg = Release|x64
 		{0B871A42-8393-40FA-9FA9-23E5EF420D0C}.Release|x64.Build.0 = Release|x64
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Debug|Win32.Build.0 = Debug|Win32
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Debug|x64.ActiveCfg = Debug|x64
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Debug|x64.Build.0 = Debug|x64
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Release|Win32.ActiveCfg = Release|Win32
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Release|Win32.Build.0 = Release|Win32
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Release|x64.ActiveCfg = Release|x64
+		{9E2AA9AF-8CD1-496F-AB40-24E3AFC8239F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
