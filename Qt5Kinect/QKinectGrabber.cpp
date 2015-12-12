@@ -77,10 +77,15 @@ public:
 	signed __int64				InfraredFrameTime;		// timestamp
 	std::vector<unsigned short> InfraredBuffer;
 
+	//Body Frame
+	bool						UseBodyFrame;
+	IBodyFrameReader*			BodyFrameReader;
+	ICoordinateMapper*			CoordinateMapper;
 
 };
 
 QKinectGrabberPrivate::QKinectGrabberPrivate():
+	Running(false),
 	KinectSensor(NULL),
 	UseColorFrame(false),
 	ColorFrameReader(NULL),
@@ -95,7 +100,9 @@ QKinectGrabberPrivate::QKinectGrabberPrivate():
 	InfraredFrameReader(NULL),
 	InfraredFrameWidth(512),
 	InfraredFrameHeight(424),
-	Running(false)
+	UseBodyFrame(false),
+	BodyFrameReader(NULL),
+	CoordinateMapper(NULL)	
 {
 	ColorBuffer.resize(ColorFrameWidth * ColorFrameHeight * ColorFrameChannels, 0);
 	DepthBuffer.resize(DepthFrameWidth * DepthFrameHeight, 0);
@@ -149,6 +156,16 @@ void QKinectGrabber::setUseInfraredFrame(bool use)
 	d_ptr->UseInfraredFrame = use;
 }
 
+
+bool QKinectGrabber::useBodyFrame() const
+{
+	return d_ptr->UseBodyFrame;
+}
+
+void QKinectGrabber::setUseBodyFrame(bool use)
+{
+	d_ptr->UseBodyFrame = use;
+}
 
 
 
@@ -211,6 +228,28 @@ bool QKinectGrabberPrivate::InitializeSensor()
 			}
 
 			SafeRelease(pInfraredFrameSource);
+		}
+
+		// Body Frame
+		if (UseBodyFrame){			
+			IBodyFrameSource* pBodyFrameSource = NULL;
+
+			if (SUCCEEDED(hr))
+			{
+				hr = KinectSensor->get_CoordinateMapper(&CoordinateMapper);
+			}
+
+			if (SUCCEEDED(hr))
+			{
+				hr = KinectSensor->get_BodyFrameSource(&pBodyFrameSource);
+			}
+
+			if (SUCCEEDED(hr))
+			{
+				hr = pBodyFrameSource->OpenReader(&BodyFrameReader);
+			}
+
+			SafeRelease(pBodyFrameSource);
 		}
 	}
 
