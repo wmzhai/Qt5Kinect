@@ -265,9 +265,11 @@ bool QKinectGrabberPrivate::InitializeSensor()
 
 void QKinectGrabberPrivate::UninitializeSensor()
 {
-
 	// done with color frame reader
 	SafeRelease(ColorFrameReader);
+	SafeRelease(DepthFrameReader);
+	SafeRelease(InfraredFrameReader);
+	SafeRelease(BodyFrameReader);
 
 	// close the Kinect Sensor
 	if (KinectSensor)
