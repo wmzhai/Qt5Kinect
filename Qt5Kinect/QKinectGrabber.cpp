@@ -44,7 +44,6 @@ public:
 
 	IKinectSensor*				KinectSensor;		// Current Kinect	
 
-	bool						EmitImageEnabled;
 	QVector<QRgb>				ColorTable;
 	QMutex						Mutex;
 	bool						Running;
@@ -60,6 +59,7 @@ public:
 
 
 	//Depth Frame
+	bool						UseDepthFrame;
 	IDepthFrameReader*			DepthFrameReader;	// Depth reader	
 	std::vector<unsigned short>	DepthBuffer;
 	unsigned short				DepthFrameWidth;		// = 512;
@@ -70,6 +70,7 @@ public:
 
 
 	//Infrared Frame
+	bool						UseInfraredFrame;
 	IInfraredFrameReader*		InfraredFrameReader;	// Infrared reader
 	unsigned short				InfraredFrameWidth;		// = 512;
 	unsigned short				InfraredFrameHeight;	// = 424;
@@ -86,13 +87,14 @@ QKinectGrabberPrivate::QKinectGrabberPrivate():
 	ColorFrameWidth(1920),
 	ColorFrameHeight(1080),
 	ColorFrameChannels(4),
+	UseDepthFrame(false),
 	DepthFrameReader(NULL),
 	DepthFrameWidth(512),
 	DepthFrameHeight(424),
+	UseInfraredFrame(false),
 	InfraredFrameReader(NULL),
 	InfraredFrameWidth(512),
 	InfraredFrameHeight(424),
-	EmitImageEnabled(true),
 	Running(false)
 {
 	ColorBuffer.resize(ColorFrameWidth * ColorFrameHeight * ColorFrameChannels, 0);
@@ -127,6 +129,27 @@ void QKinectGrabber::setUseColorFrame(bool use)
 	d_ptr->UseColorFrame = use;
 }
 
+bool QKinectGrabber::useDepthFrame() const
+{
+	return d_ptr->UseDepthFrame;
+}
+
+void QKinectGrabber::setUseDepthFrame(bool use)
+{
+	d_ptr->UseDepthFrame = use;
+}
+
+bool QKinectGrabber::useInfraredFrame() const
+{
+	return d_ptr->UseInfraredFrame;
+}
+
+void QKinectGrabber::setUseInfraredFrame(bool use)
+{
+	d_ptr->UseInfraredFrame = use;
+}
+
+
 
 
 bool QKinectGrabberPrivate::InitializeSensor()
@@ -159,32 +182,36 @@ bool QKinectGrabberPrivate::InitializeSensor()
 		}
 		
 		// DepthFrame
-		IDepthFrameSource* pDepthFrameSource = NULL;
-		if (SUCCEEDED(hr))
-		{
-			hr = KinectSensor->get_DepthFrameSource(&pDepthFrameSource);
-		}
+		if (UseDepthFrame){
+			IDepthFrameSource* pDepthFrameSource = NULL;
+			if (SUCCEEDED(hr))
+			{
+				hr = KinectSensor->get_DepthFrameSource(&pDepthFrameSource);
+			}
 
-		if (SUCCEEDED(hr))
-		{
-			hr = pDepthFrameSource->OpenReader(&DepthFrameReader);
-		}
+			if (SUCCEEDED(hr))
+			{
+				hr = pDepthFrameSource->OpenReader(&DepthFrameReader);
+			}
 
-		SafeRelease(pDepthFrameSource);
+			SafeRelease(pDepthFrameSource);
+		}
 
 		// InfraredFrame
-		IInfraredFrameSource* pInfraredFrameSource = NULL;
-		if (SUCCEEDED(hr))
-		{
-			hr = KinectSensor->get_InfraredFrameSource(&pInfraredFrameSource);
-		}
+		if (UseInfraredFrame){
+			IInfraredFrameSource* pInfraredFrameSource = NULL;
+			if (SUCCEEDED(hr))
+			{
+				hr = KinectSensor->get_InfraredFrameSource(&pInfraredFrameSource);
+			}
 
-		if (SUCCEEDED(hr))
-		{
-			hr = pInfraredFrameSource->OpenReader(&InfraredFrameReader);
+			if (SUCCEEDED(hr))
+			{
+				hr = pInfraredFrameSource->OpenReader(&InfraredFrameReader);
+			}
+
+			SafeRelease(pInfraredFrameSource);
 		}
-		
-		SafeRelease(pInfraredFrameSource);
 	}
 
 	if (!KinectSensor || FAILED(hr))
@@ -323,7 +350,7 @@ bool QKinectGrabberPrivate::UpdateColor()
 
 bool QKinectGrabberPrivate::UpdateDepth()
 {
-	if (!DepthFrameReader)
+	if (!DepthFrameReader || !UseDepthFrame)
 	{
 		return false;
 	}
@@ -416,7 +443,7 @@ bool QKinectGrabberPrivate::UpdateDepth()
 
 bool QKinectGrabberPrivate::UpdateInfrared()
 {
-	if (!InfraredFrameReader)
+	if (!InfraredFrameReader || !UseInfraredFrame)
 	{
 		return false;
 	}
@@ -514,13 +541,12 @@ void QKinectGrabber::run()
 		bool colorUpdated = d->UpdateColor();
 		bool depthUpdated = d->UpdateDepth();
 		bool infraredUpdated = d->UpdateInfrared();
-		
 
 		if (colorUpdated || depthUpdated || infraredUpdated)
 			emit frameUpdated();
 
 		// If send image is enabled, emit signal with the color image
-		if (colorUpdated && d->EmitImageEnabled)
+		if (d->UseColorFrame && colorUpdated)
 		{
 			d->Mutex.lock();
 			{
@@ -530,7 +556,7 @@ void QKinectGrabber::run()
 		}
 
 		// If send image is enabled, emit signal with the depth image
-		if (depthUpdated && d->EmitImageEnabled)
+		if (d->UseDepthFrame && depthUpdated)
 		{
 			d->Mutex.lock();
 			{
@@ -557,7 +583,7 @@ void QKinectGrabber::run()
 		}
 
 		// If send image is enabled, emit signal with the depth image
-		if (infraredUpdated && d->EmitImageEnabled)
+		if (d->UseInfraredFrame && infraredUpdated)
 		{
 			d->Mutex.lock();
 			{

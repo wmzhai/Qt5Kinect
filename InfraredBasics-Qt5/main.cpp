@@ -8,10 +8,9 @@
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
-	//InfraredBasics w;
-	//w.show();
 
 	QKinectGrabber k;
+	k.setUseInfraredFrame(true);
 	k.start();
 
 	QImageWidget infraredWidget;

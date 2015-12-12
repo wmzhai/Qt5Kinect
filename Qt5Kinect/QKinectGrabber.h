@@ -12,13 +12,16 @@ public:
 
 private:
 	Q_PROPERTY(bool useColorFrame READ useColorFrame WRITE setUseColorFrame)
-
+	Q_PROPERTY(bool useDepthFrame READ useDepthFrame WRITE setUseDepthFrame)
+	Q_PROPERTY(bool useInfraredFrame READ useInfraredFrame WRITE setUseInfraredFrame)
 
 public:
 	bool useColorFrame() const;
 	void setUseColorFrame(bool);
-
-
+	bool useDepthFrame() const;
+	void setUseDepthFrame(bool);
+	bool useInfraredFrame() const;
+	void setUseInfraredFrame(bool);
 
 public slots:
 	void stop();
