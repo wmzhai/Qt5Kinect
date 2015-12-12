@@ -1,9 +1,15 @@
 # Kinect Samples Written in Qt
 
+
 ## Project List
 * Qt5Kinect - Kinect Sensor API Wrap Lib for Qt5
 * ColorBasics-Qt5 - Demo Basic ColorFrame Grabing and Display
 * DepthBasics-Qt5 - Demo Basic DepthFrame Grabing and Display
+
+
+## Roadmap
+* Display Image with D2D for better performace
+* Display Image with OpenGL for better performace
 
 
 ## Environment
