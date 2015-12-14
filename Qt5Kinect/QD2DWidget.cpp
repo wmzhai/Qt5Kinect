@@ -1,8 +1,16 @@
 #include "stdafx.h"
 #include "QD2DWidget.h"
 
+class QD2DWidgetPrivate
+{
+public:
+	UINT                     SourceHeight;
+	UINT                     SourceWidth;
+	LONG                     SourceStride;
+};
+
 QD2DWidget::QD2DWidget(QWidget *parent, Qt::WindowFlags flags)
-	: QWidget(parent, flags),
+	: QWidget(parent, flags), d_ptr(new QD2DWidgetPrivate),
 	m_pD2DFactory(NULL),
 	m_pHwndRenderTarget(NULL),
 	m_pBitmap(NULL)
@@ -10,7 +18,6 @@ QD2DWidget::QD2DWidget(QWidget *parent, Qt::WindowFlags flags)
 {
 	setAttribute(Qt::WA_PaintOnScreen);
 	setAttribute(Qt::WA_NoSystemBackground);
-
 }
 
 QD2DWidget::~QD2DWidget()
@@ -23,17 +30,18 @@ HRESULT	QD2DWidget::Initialize()
 	HRESULT hr = S_OK;
 
 	// Get the frame size
-	m_sourceWidth = 1920;
-	m_sourceHeight = 1080;
-	m_sourceStride = m_sourceWidth * sizeof(RGBQUAD);
+	d_ptr->SourceWidth = 1920;
+	d_ptr->SourceHeight = 1080;
+	d_ptr->SourceStride = d_ptr->SourceWidth * sizeof(RGBQUAD);
 
+	
 	// create heap storage for color pixel data in RGBX format
-	m_pColorRGBX = new RGBQUAD[m_sourceWidth * m_sourceHeight];
+	m_pColorRGBX = new RGBQUAD[d_ptr->SourceWidth * d_ptr->SourceHeight];
 
 	// Create D2D factory
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
 
-	D2D1_SIZE_U size = D2D1::SizeU(m_sourceWidth, m_sourceHeight);
+	D2D1_SIZE_U size = D2D1::SizeU(d_ptr->SourceWidth, d_ptr->SourceHeight);
 	D2D1_RENDER_TARGET_PROPERTIES rtProps = D2D1::RenderTargetProperties();
 	rtProps.pixelFormat = D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
 	rtProps.usage = D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE;
@@ -159,7 +167,7 @@ void QD2DWidget::resizeEvent(QResizeEvent *p_event)
 
 void QD2DWidget::setColorBuffer(const BYTE* pBuf)
 {
-	HRESULT hr = m_pBitmap->CopyFromMemory(NULL, pBuf, m_sourceStride);
+	HRESULT hr = m_pBitmap->CopyFromMemory(NULL, pBuf, d_ptr->SourceStride);
 	if (FAILED(hr))
 		return ;
 

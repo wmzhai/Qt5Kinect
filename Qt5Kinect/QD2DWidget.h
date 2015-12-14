@@ -5,6 +5,8 @@
 #include <dwrite.h>
 #include <wincodec.h>
 
+
+class QD2DWidgetPrivate;
 class QD2DWidget : public QWidget
 {
 	Q_OBJECT
@@ -24,6 +26,9 @@ public:
 
 	void onResize(UINT nWidth, UINT nHeight);
 
+protected:
+	QScopedPointer<QD2DWidgetPrivate> d_ptr;
+
 public slots:
 	void setColorBuffer(const BYTE* pBuf);
 
@@ -34,14 +39,10 @@ protected:
 	virtual void resizeEvent(QResizeEvent *p_event);
 
 
+
 private:
 	ID2D1Factory*			m_pD2DFactory;
 	ID2D1HwndRenderTarget*	m_pHwndRenderTarget;
 	ID2D1Bitmap*            m_pBitmap;
 	RGBQUAD*                m_pColorRGBX;
-
-	// Format information
-	UINT                     m_sourceHeight;
-	UINT                     m_sourceWidth;
-	LONG                     m_sourceStride;
 };
