@@ -6,6 +6,10 @@
 
 // Windows Header Files
 #include <windows.h>
+#include <d2d1.h>
+#include <d2d1helper.h>
+#include <dwrite.h>
+#include <wincodec.h>
 
 // Kinect Header files
 #include <Kinect.h>
@@ -22,6 +26,7 @@
 #include <QtWidgets>
 #include <QThread>
 #include <QObject>
+#include <QResizeEvent>
 
 //std lib
 #include <strsafe.h>
@@ -37,6 +42,11 @@
 #endif
 #endif
 
+#pragma comment(lib,"d2d1.lib")
+#pragma comment(lib,"dwrite.lib")
+#pragma comment(lib,"windowscodecs.lib")
+#pragma comment(lib,"dxgi.lib")
+
 // Safe release for interfaces
 template<class Interface>
 inline void SafeRelease(Interface *& pInterfaceToRelease)
@@ -47,3 +57,18 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 		pInterfaceToRelease = NULL;
 	}
 }
+
+// a diffrent style release, we will unify them in the future
+#ifndef V_RETURN
+#define V_RETURN(x)    { hr = (x); if( FAILED(hr) ) { return hr; } }
+#endif
+
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p)       { if (p) { delete (p);     (p)=NULL; } }
+#endif    
+#ifndef SAFE_DELETE_ARRAY
+#define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p);   (p)=NULL; } }
+#endif    
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
+#endif
