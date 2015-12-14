@@ -1,9 +1,9 @@
-#ifndef COLORBASICS_H
-#define COLORBASICS_H
-
+#pragma once
 #include <QtWidgets/QWidget>
 #include "ui_ColorBasics.h"
 #include "QD2DWidget.h"
+#include "QKinectGrabber.h"
+
 
 class ColorBasics : public QWidget
 {
@@ -15,6 +15,5 @@ public:
 
 private:
 	Ui::ColorBasicsClass ui;
+	QKinectGrabber k;
 };
-
-#endif // COLORBASICS_H

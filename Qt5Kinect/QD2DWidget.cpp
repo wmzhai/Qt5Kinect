@@ -8,7 +8,8 @@ QD2DWidget::QD2DWidget(QWidget *parent, Qt::WindowFlags flags)
 	m_pDWriteFactory(NULL),
 	m_pHwndRenderTarget(NULL),
 	m_pBrush(NULL),
-	m_pTextFormat(NULL)
+	m_pTextFormat(NULL),
+	m_pBitmap(NULL)
 
 {
 	setAttribute(Qt::WA_PaintOnScreen);
@@ -24,6 +25,14 @@ QD2DWidget::~QD2DWidget()
 HRESULT	QD2DWidget::Initialize()
 {
 	HRESULT hr = S_OK;
+
+	// Get the frame size
+	m_sourceWidth = 1920;
+	m_sourceHeight = 1080;
+	m_sourceStride = m_sourceWidth * sizeof(RGBQUAD);
+
+	// create heap storage for color pixel data in RGBX format
+	m_pColorRGBX = new RGBQUAD[m_sourceWidth * m_sourceHeight];
 
 	// Create D2D factory
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
@@ -48,10 +57,13 @@ HRESULT	QD2DWidget::Initialize()
 			);
 	}
 
+	D2D1_SIZE_U size = D2D1::SizeU(m_sourceWidth, m_sourceHeight);
+	D2D1_RENDER_TARGET_PROPERTIES rtProps = D2D1::RenderTargetProperties();
+	rtProps.pixelFormat = D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
+	rtProps.usage = D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE;
+
 	if (SUCCEEDED(hr))
 	{
-		D2D1_SIZE_U size = D2D1::SizeU(width(), height());
-
 		// Create a Direct2D render target.
 		hr = m_pD2DFactory->CreateHwndRenderTarget(
 			D2D1::RenderTargetProperties(),
@@ -60,6 +72,12 @@ HRESULT	QD2DWidget::Initialize()
 			);
 	}
 
+	// Create a bitmap that we can copy image data into and then render to the target
+	hr = m_pHwndRenderTarget->CreateBitmap(
+		size,
+		D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),
+		&m_pBitmap
+		);
 
 	if (SUCCEEDED(hr))
 	{
@@ -77,6 +95,12 @@ void QD2DWidget::Uninitialize()
 	SAFE_RELEASE(m_pD2DFactory);
 	SAFE_RELEASE(m_pWICFactory);
 	SAFE_RELEASE(m_pDWriteFactory);
+
+	if (m_pColorRGBX)
+	{
+		delete[] m_pColorRGBX;
+		m_pColorRGBX = NULL;
+	}
 }
 
 
@@ -230,4 +254,24 @@ void QD2DWidget::resizeEvent(QResizeEvent *p_event)
 		QWidget::resizeEvent(p_event);
 	}
 	onResize(newSize.width(), newSize.height());
+}
+
+
+void QD2DWidget::setColorBuffer(const BYTE* pBuf)
+{
+	HRESULT hr = S_OK;
+
+	// Copy the image that was passed in into the direct2d bitmap
+	hr = m_pBitmap->CopyFromMemory(NULL, pBuf, m_sourceStride);
+
+	if (FAILED(hr))
+		return ;
+
+	beginDraw();
+
+	// Draw the bitmap stretched to the size of the window
+	m_pHwndRenderTarget->DrawBitmap(m_pBitmap);
+
+	endDraw();
+
 }

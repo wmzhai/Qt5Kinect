@@ -1,6 +1,4 @@
-#ifndef BODYBASICS_H
-#define BODYBASICS_H
-
+#pragma once
 #include <QtWidgets/QWidget>
 #include "ui_BodyBasics.h"
 
@@ -15,5 +13,3 @@ public:
 private:
 	Ui::BodyBasicsClass ui;
 };
-
-#endif // BODYBASICS_H

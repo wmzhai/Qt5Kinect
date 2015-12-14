@@ -34,6 +34,7 @@ signals:
 	void depthImage(const QImage &image);
 	void infraredImage(const QImage &image);
 	void frameUpdated();
+	void colorBuffer(const BYTE* pBuf);
 
 protected:
 	void run() Q_DECL_OVERRIDE;
