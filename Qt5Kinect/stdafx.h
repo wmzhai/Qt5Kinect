@@ -18,6 +18,7 @@
 #include <QThread>
 #include <QWaitCondition>
 #include <QImage>
+#include <QWidget>
 #include <QtWidgets>
 #include <QThread>
 #include <QObject>
