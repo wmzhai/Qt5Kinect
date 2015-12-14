@@ -3,6 +3,7 @@
 
 #include <QtWidgets/QWidget>
 #include "ui_ColorBasics.h"
+#include "QD2DWidget.h"
 
 class ColorBasics : public QWidget
 {

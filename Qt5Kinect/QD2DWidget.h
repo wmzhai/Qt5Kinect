@@ -13,13 +13,6 @@ public:
 	QD2DWidget(QWidget *parent = NULL, Qt::WindowFlags flags = NULL);
 	~QD2DWidget();
 
-	//-----------------------------------------------------------------------------
-	// Name: initialize()
-	// Desc: This function will only be called once during the application's 
-	//       initialization phase. Therefore, it can't contain any resources that 
-	//       need to be restored every time the Direct3D device is lost or the 
-	//       window is resized.
-	//-----------------------------------------------------------------------------
 	HRESULT	Initialize();
 	void Uninitialize();
 	
@@ -35,7 +28,6 @@ public:
 
 protected:
 	QPaintEngine *paintEngine() const { return 0; }
-
 	virtual void paintEvent(QPaintEvent *e);
 	virtual void resizeEvent(QResizeEvent *p_event);
 

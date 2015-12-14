@@ -1,25 +1,40 @@
-<UI version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>ColorBasicsClass</class>
- <widget class="QWidget" name="ColorBasicsClass" >
-  <property name="objectName" >
-   <string notr="true">ColorBasicsClass</string>
-  </property>
-  <property name="geometry" >
+ <widget class="QWidget" name="ColorBasicsClass">
+  <property name="geometry">
    <rect>
-	<x>0</x>
-	<y>0</y>
-	<width>600</width>
-	<height>400</height>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>1200</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>ColorBasics</string>
   </property>
+  <widget class="QD2DWidget" name="d2dWidget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1920</width>
+     <height>1080</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
- <layoutDefault spacing="6" margin="11" />
- <pixmapfunction></pixmapfunction>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>QD2DWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">QD2DWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
-   <include location="ColorBasics.qrc"/>
+  <include location="ColorBasics.qrc"/>
  </resources>
  <connections/>
-</UI>
+</ui>
