@@ -16,8 +16,6 @@ public:
 	HRESULT	Initialize();
 	void Uninitialize();
 	
-	HRESULT	InvalidateDeviceObjects();
-	HRESULT	RestoreDeviceObjects();
 	void	ClearRenderTarget(D2D1::ColorF ClearColor);
 
 	virtual HRESULT	render();
@@ -38,11 +36,7 @@ protected:
 
 private:
 	ID2D1Factory*			m_pD2DFactory;
-	IWICImagingFactory*		m_pWICFactory;
-	IDWriteFactory*			m_pDWriteFactory;
 	ID2D1HwndRenderTarget*	m_pHwndRenderTarget;
-	ID2D1SolidColorBrush*	m_pBrush;
-	IDWriteTextFormat*		m_pTextFormat;
 	ID2D1Bitmap*            m_pBitmap;
 	RGBQUAD*                m_pColorRGBX;
 

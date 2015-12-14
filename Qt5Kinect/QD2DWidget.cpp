@@ -4,11 +4,7 @@
 QD2DWidget::QD2DWidget(QWidget *parent, Qt::WindowFlags flags)
 	: QWidget(parent, flags),
 	m_pD2DFactory(NULL),
-	m_pWICFactory(NULL),
-	m_pDWriteFactory(NULL),
 	m_pHwndRenderTarget(NULL),
-	m_pBrush(NULL),
-	m_pTextFormat(NULL),
 	m_pBitmap(NULL)
 
 {
@@ -36,26 +32,6 @@ HRESULT	QD2DWidget::Initialize()
 
 	// Create D2D factory
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
-	if (SUCCEEDED(hr))
-	{
-		// Create a WIC factory
-		hr = CoCreateInstance(
-			CLSID_WICImagingFactory,
-			NULL,
-			CLSCTX_INPROC_SERVER,
-			IID_IWICImagingFactory,
-			reinterpret_cast<void **>(&m_pWICFactory)
-			);
-	}
-	if (SUCCEEDED(hr))
-	{
-		// Create DWrite factory
-		hr = DWriteCreateFactory(
-			DWRITE_FACTORY_TYPE_SHARED,
-			__uuidof(m_pDWriteFactory),
-			reinterpret_cast<IUnknown **>(&m_pDWriteFactory)
-			);
-	}
 
 	D2D1_SIZE_U size = D2D1::SizeU(m_sourceWidth, m_sourceHeight);
 	D2D1_RENDER_TARGET_PROPERTIES rtProps = D2D1::RenderTargetProperties();
@@ -79,11 +55,6 @@ HRESULT	QD2DWidget::Initialize()
 		&m_pBitmap
 		);
 
-	if (SUCCEEDED(hr))
-	{
-		hr = RestoreDeviceObjects();
-	}
-
 	return hr;
 }
 
@@ -93,8 +64,6 @@ void QD2DWidget::Uninitialize()
 
 	SAFE_RELEASE(m_pHwndRenderTarget);
 	SAFE_RELEASE(m_pD2DFactory);
-	SAFE_RELEASE(m_pWICFactory);
-	SAFE_RELEASE(m_pDWriteFactory);
 
 	if (m_pColorRGBX)
 	{
@@ -122,64 +91,6 @@ HRESULT QD2DWidget::endDraw()
 }
 
 
-//-----------------------------------------------------------------------------
-// Name: restoreDeviceObjects()
-// Desc: You are encouraged to develop applications with a single code path to 
-//       respond to device loss. This code path is likely to be similar, if not 
-//       identical, to the code path taken to initialize the device at startup.
-//-----------------------------------------------------------------------------
-HRESULT	QD2DWidget::RestoreDeviceObjects()
-{
-	if (!m_pD2DFactory || !m_pDWriteFactory) return E_FAIL;
-
-	static const WCHAR msc_fontName[] = L"Verdana";
-	static const FLOAT msc_fontSize = 50;
-	HRESULT hr;
-
-	// Create a DirectWrite text format object.
-	hr = m_pDWriteFactory->CreateTextFormat(
-		msc_fontName,
-		NULL,
-		DWRITE_FONT_WEIGHT_NORMAL,
-		DWRITE_FONT_STYLE_NORMAL,
-		DWRITE_FONT_STRETCH_NORMAL,
-		msc_fontSize,
-		L"", //locale
-		&m_pTextFormat
-		);
-
-	if (SUCCEEDED(hr))
-	{
-		// Center the text horizontally and vertically.
-		m_pTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-		m_pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-	}
-
-	// Create a black brush.
-	hr = m_pHwndRenderTarget->CreateSolidColorBrush(
-		D2D1::ColorF(D2D1::ColorF::White),
-		&m_pBrush
-		);
-
-	return S_OK;
-}
-
-//-----------------------------------------------------------------------------
-// Name: invalidateDeviceObjects()
-// Desc: If the lost device can be restored, the application prepares the 
-//       device by destroying all video-memory resources and any 
-//       swap chains. This is typically accomplished by using the SAFE_RELEASE 
-//       macro.
-//-----------------------------------------------------------------------------
-HRESULT	QD2DWidget::InvalidateDeviceObjects()
-{
-	if (!m_pD2DFactory || !m_pDWriteFactory) return E_FAIL;
-
-	SAFE_RELEASE(m_pBrush);
-	SAFE_RELEASE(m_pTextFormat);
-
-	return S_OK;
-}
 
 void QD2DWidget::ClearRenderTarget(D2D1::ColorF ClearColor)
 {
@@ -198,21 +109,10 @@ HRESULT	QD2DWidget::render()
 
 	HRESULT hr = S_OK;
 
-	static const WCHAR sc_helloWorld[] = L"Hello, World!";
-
 	beginDraw();
 
-	m_pHwndRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-	ClearRenderTarget(D2D1::ColorF(D2D1::ColorF::Black));
-
-	m_pHwndRenderTarget->DrawText(
-		sc_helloWorld,
-		ARRAYSIZE(sc_helloWorld) - 1,
-		m_pTextFormat,
-		D2D1::RectF(0, 0, width() / 2, height() / 2),
-		m_pBrush
-		);
+	// Draw the bitmap stretched to the size of the window
+	m_pHwndRenderTarget->DrawBitmap(m_pBitmap);
 
 	endDraw();
 
@@ -259,19 +159,9 @@ void QD2DWidget::resizeEvent(QResizeEvent *p_event)
 
 void QD2DWidget::setColorBuffer(const BYTE* pBuf)
 {
-	HRESULT hr = S_OK;
-
-	// Copy the image that was passed in into the direct2d bitmap
-	hr = m_pBitmap->CopyFromMemory(NULL, pBuf, m_sourceStride);
-
+	HRESULT hr = m_pBitmap->CopyFromMemory(NULL, pBuf, m_sourceStride);
 	if (FAILED(hr))
 		return ;
 
-	beginDraw();
-
-	// Draw the bitmap stretched to the size of the window
-	m_pHwndRenderTarget->DrawBitmap(m_pBitmap);
-
-	endDraw();
-
+	render();
 }
