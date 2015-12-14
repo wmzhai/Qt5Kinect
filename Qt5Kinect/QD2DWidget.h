@@ -22,6 +22,22 @@ public:
 	//-----------------------------------------------------------------------------
 	HRESULT	Initialize();
 	void Uninitialize();
+	
+	HRESULT	InvalidateDeviceObjects();
+	HRESULT	RestoreDeviceObjects();
+	void	ClearRenderTarget(D2D1::ColorF ClearColor);
+
+	virtual HRESULT	render();
+	void beginDraw();
+	HRESULT endDraw();
+
+	void onResize(UINT nWidth, UINT nHeight);
+
+protected:
+	QPaintEngine *paintEngine() const { return 0; }
+
+	virtual void paintEvent(QPaintEvent *e);
+	virtual void resizeEvent(QResizeEvent *p_event);
 
 private:
 	ID2D1Factory*			m_pD2DFactory;
