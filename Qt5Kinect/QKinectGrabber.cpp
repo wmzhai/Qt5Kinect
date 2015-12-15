@@ -591,8 +591,8 @@ void QKinectGrabber::run()
 		{
 			d->Mutex.lock();
 			{
-				emit colorBuffer(d->ColorBuffer.data());
-				//emit colorImage(QImage(d->ColorBuffer.data(), d->ColorFrameWidth, d->ColorFrameHeight, QImage::Format_ARGB32));
+				//emit colorBuffer(d->ColorBuffer.data());
+				emit colorImage(QImage(d->ColorBuffer.data(), d->ColorFrameWidth, d->ColorFrameHeight, QImage::Format_ARGB32));
 			}
 			d->Mutex.unlock();
 		}
